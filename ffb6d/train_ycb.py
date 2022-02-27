@@ -45,7 +45,9 @@ bs_utils = Basic_Utils(config)
 writer = SummaryWriter(log_dir=config.log_traininfo_dir)
 
 rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
-resource.setrlimit(resource.RLIMIT_NOFILE, (30000, rlimit[1]))
+print(resource.RLIMIT_NOFILE)
+print(rlimit[1])
+resource.setrlimit(resource.RLIMIT_NOFILE, (2048, rlimit[1]))
 
 color_lst = [(0, 0, 0)]
 for i in range(config.n_objects):
@@ -267,8 +269,9 @@ def model_fn_decorator(
 
             if not is_eval:
                 if args.local_rank == 0:
-                    writer.add_scalars('loss', loss_dict, it)
-                    writer.add_scalars('train_acc', acc_dict, it)
+                    #writer.add_scalars('loss', loss_dict, it)
+                    #writer.add_scalars('train_acc', acc_dict, it)
+                    m1k= 1
             if is_test and test_pose:
                 cld = cu_dt['cld_rgb_nrm'][:, :3, :].permute(0, 2, 1).contiguous()
 
@@ -391,8 +394,8 @@ class Trainer(object):
                 for k, v in acc_dict.items():
                     print(k, v, file=of)
         if args.local_rank == 0:
-            writer.add_scalars('val_acc', acc_dict, it)
-
+            #writer.add_scalars('val_acc', acc_dict, it)
+            m1k=1
         return total_loss / count, eval_dict
 
     def train(
@@ -465,9 +468,9 @@ class Trainer(object):
                         scaled_loss.backward()
                     lr = get_lr(self.optimizer)
                     if args.local_rank == 0:
-                        writer.add_scalar('lr/lr', lr, it)
+                        #writer.add_scalar('lr/lr', lr, it)
 
-                    self.optimizer.step()
+                    	self.optimizer.step()
 
                     if self.lr_scheduler is not None:
                         self.lr_scheduler.step(it)
@@ -519,8 +522,9 @@ class Trainer(object):
                         pbar.set_postfix(dict(total_it=it))
 
             if args.local_rank == 0:
-                writer.export_scalars_to_json("./all_scalars.json")
-                writer.close()
+                #writer.export_scalars_to_json("./all_scalars.json")
+                #writer.close()
+                m1k=1
         return best_loss
 
 
@@ -533,6 +537,7 @@ def train():
         torch.manual_seed(args.local_rank)
         torch.set_printoptions(precision=10)
     torch.cuda.set_device(args.local_rank)
+    print("IS_AVAILABLE", torch.distributed.is_available())
     torch.distributed.init_process_group(
         backend='nccl',
         init_method='env://',
@@ -574,7 +579,7 @@ def train():
     )
     opt_level = args.opt_level
     model, optimizer = amp.initialize(
-        model, optimizer, opt_level=opt_level,
+        model, optimizer, opt_level='O1',
     )
 
     # default value
@@ -649,6 +654,7 @@ def train():
         end = time.time()
         print("\nUse time: ", end - start, 's')
     else:
+	
         trainer.train(
             it, start_epoch, config.n_total_epoch, train_loader, None,
             val_loader, best_loss=best_loss,

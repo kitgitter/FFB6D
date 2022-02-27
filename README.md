@@ -345,5 +345,50 @@ See our demo video on [YouTube](https://www.youtube.com/watch?v=SSi2TnyD6Is) or 
   python3 -m torch.distributed.launch --nproc_per_node=1 train_ycb.py --gpu '0' -eval_net -checkpoint $tst_mdl -test -test_pose -test_gt
   ```
 
+## TL:DR Installation
+```
+cd FFB6D
+
+conda create --name ffb6d1 python=3.6.13
+
+conda activate ffb6d1
+
+pip install -r requirements_updated.txt
+
+conda install -c conda-forge cudatoolkit=10.1.243 cudatoolkit-dev=10.1.243
+
+
+
+
+# APEX
+cd ../
+git clone https://github.com/NVIDIA/apex
+cd apex
+git reset --hard 3fe10b5597ba14a748ebb271a6ab97c09c5701ac
+export TORCH_CUDA_ARCH_LIST="6.0;6.1;6.2;7.0;7.5"  # set the target architecture manually, suggested in issue https://github.com/NVIDIA/apex/issues/605#issuecomment-554453001
+pip3 install -v --disable-pip-version-check --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext" ./
+cd ..
+
+
+# normalSpeed
+conda install pytorch==1.4.0 torchvision==0.5.0 -c pytorch
+cd ../
+git clone https://github.com/hfutcgncas/normalSpeed.git
+cd normalSpeed/normalSpeed
+python3 setup.py install --user
+cd ../..
+
+# python-tk
+pip install python3-tk
+
+# Compile
+cd FFB6D/ffb6d/models/RandLA/
+sh compile_op.sh
+
+# run
+python3 -m torch.distributed.launch --nproc_per_node=1 train_ycb.py --gpus=1 --local_rank=0
+```
+
+
 ## License
 Licensed under the [MIT License](./LICENSE).
